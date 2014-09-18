@@ -21,15 +21,17 @@ int ball_speed = 2;
 int ball_x_vel;
 int ball_y_vel;
 int ball_size = 5;
-long player_1_score = 1;
-long player_2_score = 10;
+long player_1_score = 0;
+long player_2_score = 0;
 int paddle_width = 8;
 int paddle_length = 40;
 int game_state = -1;
+int winner = 1;
 
 void drawGame() {
   if (game_state == -1) {
     Tft.drawString("PONG", 200, 60, 8, WHITE);
+    Tft.drawString("Touch screen to play!", 70, 38, 2, WHITE);
   } else if (game_state == 0) {
     ball.x = 120;
     ball.y = 160;
@@ -45,8 +47,11 @@ void drawGame() {
     for (int i = 0; i < 240; i+=10) {
       Tft.drawLine(i, 160, i+5, 160, WHITE); 
     }
-  } else {
-    
+  } else if (game_state == 1) {
+    char str[256];
+    Tft.fillScreen();
+    sprintf(str, "Player %d wins!", winner);
+    Tft.drawString(str, 120, 80, 2, WHITE);
   }
 }
 void setup()
@@ -57,7 +62,6 @@ void setup()
 
 }
 
-
 void loop() {
     // a point object holds x y and z coordinates.
     Point p = ts.getPoint();
@@ -66,16 +70,14 @@ void loop() {
     p.x = map(p.x, TS_MINX, TS_MAXX, 0, 240) - (paddle_length / 2);
     p.y = map(p.y, TS_MINY, TS_MAXY, 0, 320);
     
-    if (game_state == -1) {
-      Tft.drawString("Touch screen to play!", 70, 38, 2, WHITE);
-      delay(1000);
-      Tft.drawString("Touch screen to play!", 70, 38, 2, BLACK);
-      delay(500);
-      if (p.z > __PRESSURE) {
+    if (game_state == -1) {  // We are at the start screen
+      if (p.z > __PRESURE) {
         game_state = 0;
         drawGame();
+        delay(1000);
       }
-    } else if (game_state == 0) {
+      
+    } else if (game_state == 0) {  // We are playing the game
       // we have some minimum pressure we consider 'valid'
       // pressure of 0 means no pressing!
       if (p.z > __PRESURE) {
@@ -119,6 +121,13 @@ void loop() {
       ball.y = ball.y + ball_y_vel;
       Tft.fillRectangle(ball.x, ball.y, ball_size, ball_size, WHITE);
       
+      //Redraw parts that can get erased
+      Tft.drawNumber(player_1_score, 230, 130, 3, WHITE);
+      Tft.drawNumber(player_2_score, 230, 169, 3, WHITE);
+      for (int i = 0; i < 240; i+=10) {
+        Tft.drawLine(i, 160, i+5, 160, WHITE); 
+      }
+      
       // get ball edges
       int ball_left = ball.y;
       int ball_right = ball.y + ball_size;
@@ -157,25 +166,26 @@ void loop() {
         ball_x_vel = ball_speed;  // right paddle top collision
       } else if ((ball_left) <= 0) {  // player 1 loses
         player_2_score++;
+        if (player_2_score == 5) {
+          winner = 2;
+          game_state = 1;
+        }
         drawGame();
         delay(1000); 
       } else if ((ball_right) >= 320) {  // player 2 loses  
         player_1_score++;
+        if (player_1_score == 5) {
+          winner = 1;
+          game_state = 1;    
+        }
         drawGame();
         delay(1000);    
       }
       
-      //Redraw parts that can get erased
-      Tft.drawNumber(player_1_score, 230, 130, 3, WHITE);
-      Tft.drawNumber(player_2_score, 230, 169, 3, WHITE);
-      for (int i = 0; i < 240; i+=10) {
-        Tft.drawLine(i, 160, i+5, 160, WHITE); 
-      }
+
+    } else {
+      
     }
       
       
-}
-
-void updatePaddles() {
-  
 }
